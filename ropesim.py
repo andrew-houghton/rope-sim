@@ -5,7 +5,7 @@ import os
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame as pg
-
+from pathlib import Path
 
 @dataclass
 class Settings:
@@ -197,7 +197,7 @@ def simulate(settings, masses, anchors, ropes) -> list:
     return snapshots
 
 
-def render(simulation_settings, masses, anchors, ropes, snapshots):
+def render(simulation_settings, masses, anchors, ropes, snapshots, save=False):
     FPS = 60
     SIMULATION_SPEED = 1
 
@@ -283,12 +283,18 @@ def render(simulation_settings, masses, anchors, ropes, snapshots):
         clock.tick(FPS)
         pg.display.update()
 
+        if save:
+            pg.image.save(screen, Path(__file__).parent.joinpath("video-frames", f"frame-{i:0>4}.png"))
     pg.quit()
+
+    if save:
+        print("ffmpeg -f image2 -r 60 -pattern_type glob -i 'video-frames/*.png' -vcodec libx264 -crf 22 video.mp4")
+
 
 
 def main():
     simulation_settings = Settings(
-        duration_seconds=10,
+        duration_seconds=4,
         timestep=0.005,
     )
     masses, anchors, ropes = fall_during_tyrolean()
@@ -296,7 +302,7 @@ def main():
 
     snapshots = simulate(simulation_settings, masses, anchors, ropes)
 
-    render(simulation_settings, masses, anchors, ropes, snapshots)
+    render(simulation_settings, masses, anchors, ropes, snapshots, save=True)
 
 
 # For later;
@@ -308,6 +314,8 @@ def main():
     # 3. add a limit to the amplitude adjustment
 
 # Add a method to mark a "moment of interest" and render that part in slow motion.
+
+# Auto detect appropriate bounds for video with a small margin
 
 if __name__ == "__main__":
     main()
